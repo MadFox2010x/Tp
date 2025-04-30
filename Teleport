@@ -1,145 +1,124 @@
--- // Mad Fox Admin Menu // --
-
-if game.CoreGui:FindFirstChild("MadFoxAdmin") then
-    game.CoreGui:FindFirstChild("MadFoxAdmin"):Destroy()
-end
-
+-- ✅ Teleport GUI & Speed by Mad Fox
+-- Работает после смерти, можно менять скорость
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local mouse = player:GetMouse()
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
 
--- UI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MadFoxAdmin"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = game.CoreGui
+-- Проверка на PlayerGui
+repeat wait() until LocalPlayer:FindFirstChild("PlayerGui")
 
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 250, 0, 240)
-Frame.Position = UDim2.new(0.05, 0, 0.2, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-Frame.Active = true
-Frame.Draggable = true
-Frame.Parent = ScreenGui
-
-local UICorner = Instance.new("UICorner", Frame)
-UICorner.CornerRadius = UDim.new(0, 8)
-
-local Title = Instance.new("TextLabel", Frame)
-Title.Text = "Mad Fox Admin"
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.BackgroundTransparency = 1
-Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 20
-
-local tpBox = Instance.new("TextBox", Frame)
-tpBox.PlaceholderText = "Введите ник для ТП"
-tpBox.Size = UDim2.new(1, -10, 0, 30)
-tpBox.Position = UDim2.new(0, 5, 0, 35)
-tpBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-tpBox.TextColor3 = Color3.new(1,1,1)
-tpBox.Font = Enum.Font.SourceSans
-tpBox.TextSize = 16
-
-local tpButton = Instance.new("TextButton", Frame)
-tpButton.Text = "ТП к игроку"
-tpButton.Size = UDim2.new(1, -10, 0, 30)
-tpButton.Position = UDim2.new(0, 5, 0, 70)
-tpButton.BackgroundColor3 = Color3.fromRGB(50,50,50)
-tpButton.TextColor3 = Color3.new(1,1,1)
-tpButton.Font = Enum.Font.SourceSans
-tpButton.TextSize = 16
-
-local bringButton = Instance.new("TextButton", Frame)
-bringButton.Text = "Притянуть игрока"
-bringButton.Size = UDim2.new(1, -10, 0, 30)
-bringButton.Position = UDim2.new(0, 5, 0, 105)
-bringButton.BackgroundColor3 = Color3.fromRGB(50,50,50)
-bringButton.TextColor3 = Color3.new(1,1,1)
-bringButton.Font = Enum.Font.SourceSans
-bringButton.TextSize = 16
-
-local flyButton = Instance.new("TextButton", Frame)
-flyButton.Text = "Вкл/Выкл Флай (F)"
-flyButton.Size = UDim2.new(1, -10, 0, 30)
-flyButton.Position = UDim2.new(0, 5, 0, 140)
-flyButton.BackgroundColor3 = Color3.fromRGB(50,50,50)
-flyButton.TextColor3 = Color3.new(1,1,1)
-flyButton.Font = Enum.Font.SourceSans
-flyButton.TextSize = 16
-
-local info = Instance.new("TextLabel", Frame)
-info.Text = "Скорость: + и - | Вверх: Пробел | Вниз: Shift"
-info.TextWrapped = true
-info.Size = UDim2.new(1, -10, 0, 40)
-info.Position = UDim2.new(0, 5, 0, 175)
-info.BackgroundTransparency = 1
-info.TextColor3 = Color3.new(1,1,1)
-info.Font = Enum.Font.SourceSansItalic
-info.TextSize = 14
-
--- Телепорт к игроку
-tpButton.MouseButton1Click:Connect(function()
-    local targetName = tpBox.Text
-    local target = Players:FindFirstChild(targetName)
-    if target and target.Character then
-        player.Character:MoveTo(target.Character:GetPrimaryPartCFrame().p + Vector3.new(0, 2, 0))
+local function createGUI()
+    if LocalPlayer.PlayerGui:FindFirstChild("TeleportGUI") then
+        LocalPlayer.PlayerGui.TeleportGUI:Destroy()
     end
-end)
 
--- Притянуть игрока
-bringButton.MouseButton1Click:Connect(function()
-    local targetName = tpBox.Text
-    local target = Players:FindFirstChild(targetName)
-    if target and target.Character and player.Character then
-        target.Character:MoveTo(player.Character:GetPrimaryPartCFrame().p + Vector3.new(2, 0, 0))
+    local gui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+    gui.Name = "TeleportGUI"
+    gui.ResetOnSpawn = false
+
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0, 250, 0, 330)
+    frame.Position = UDim2.new(0.3, 0, 0.3, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+    frame.Draggable = true
+
+    local title = Instance.new("TextLabel", frame)
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Text = "Mad Fox Menu"
+    title.BackgroundTransparency = 1
+    title.TextColor3 = Color3.new(1, 1, 1)
+    title.Font = Enum.Font.SourceSansBold
+    title.TextSize = 16
+
+    local input = Instance.new("TextBox", frame)
+    input.Size = UDim2.new(1, -20, 0, 30)
+    input.Position = UDim2.new(0, 10, 0, 40)
+    input.PlaceholderText = "Имя игрока"
+    input.Text = ""
+    input.TextColor3 = Color3.new(1,1,1)
+    input.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+
+    local function btn(text, y)
+        local b = Instance.new("TextButton", frame)
+        b.Size = UDim2.new(1, -20, 0, 30)
+        b.Position = UDim2.new(0, 10, 0, y)
+        b.Text = text
+        b.TextColor3 = Color3.new(1, 1, 1)
+        b.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+        return b
     end
-end)
 
--- Флай
-local UIS = game:GetService("UserInputService")
-local RS = game:GetService("RunService")
-local flying = false
-local speed = 50
-local vel
+    local toBtn = btn("Телепорт к игроку", 80)
+    local bringBtn = btn("Телепорт игрока к себе", 120)
+    local saveBtn = btn("Сохранить позицию", 160)
+    local tpPosBtn = btn("Телепорт на позицию", 200)
+    local speedLabel = btn("Скорость: 5", 240)
+    speedLabel.AutoButtonColor = false
 
-function toggleFly()
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
-    flying = not flying
-    if flying then
-        vel = Instance.new("BodyVelocity", player.Character.HumanoidRootPart)
-        vel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-        vel.Velocity = Vector3.new()
-        RS:BindToRenderStep("Fly", Enum.RenderPriority.Input.Value, function()
-            local dir = Vector3.new()
-            if UIS:IsKeyDown(Enum.KeyCode.W) then dir = dir + workspace.CurrentCamera.CFrame.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.S) then dir = dir - workspace.CurrentCamera.CFrame.LookVector end
-            if UIS:IsKeyDown(Enum.KeyCode.A) then dir = dir - workspace.CurrentCamera.CFrame.RightVector end
-            if UIS:IsKeyDown(Enum.KeyCode.D) then dir = dir + workspace.CurrentCamera.CFrame.RightVector end
-            if UIS:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
-            if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0,1,0) end
-            if dir.Magnitude > 0 then
-                vel.Velocity = dir.Unit * speed
-            else
-                vel.Velocity = Vector3.new()
-            end
-        end)
-    else
-        RS:UnbindFromRenderStep("Fly")
-        if vel then vel:Destroy() end
-    end
+    local speed = 5
+
+    -- Управление скоростью
+    local plusBtn = Instance.new("TextButton", frame)
+    plusBtn.Size = UDim2.new(0, 30, 0, 30)
+    plusBtn.Position = UDim2.new(1, -35, 0, 240)
+    plusBtn.Text = "+"
+    plusBtn.TextColor3 = Color3.new(1,1,1)
+    plusBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+
+    local minusBtn = plusBtn:Clone()
+    minusBtn.Parent = frame
+    minusBtn.Position = UDim2.new(1, -70, 0, 240)
+    minusBtn.Text = "-"
+
+    plusBtn.MouseButton1Click:Connect(function()
+        if speed < 10 then speed += 1 end
+        speedLabel.Text = "Скорость: "..speed
+    end)
+
+    minusBtn.MouseButton1Click:Connect(function()
+        if speed > 0 then speed -= 1 end
+        speedLabel.Text = "Скорость: "..speed
+    end)
+
+    -- Телепорт к игроку
+    toBtn.MouseButton1Click:Connect(function()
+        local t = Players:FindFirstChild(input.Text)
+        if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character:MoveTo(t.Character.HumanoidRootPart.Position)
+        end
+    end)
+
+    -- Притянуть игрока
+    bringBtn.MouseButton1Click:Connect(function()
+        local t = Players:FindFirstChild(input.Text)
+        if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+            t.Character:MoveTo(LocalPlayer.Character.HumanoidRootPart.Position)
+        end
+    end)
+
+    -- Сохранение позиции
+    saveBtn.MouseButton1Click:Connect(function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then savedPos = hrp.Position end
+    end)
+
+    -- Телепорт на сохранённую позицию
+    tpPosBtn.MouseButton1Click:Connect(function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp and savedPos then
+            hrp.CFrame = CFrame.new(savedPos)
+        end
+    end)
+
 end
 
-UIS.InputBegan:Connect(function(i,g)
-    if g then return end
-    if i.KeyCode == Enum.KeyCode.F then
-        toggleFly()
-    elseif i.KeyCode == Enum.KeyCode.Equals then
-        speed = math.min(speed + 5, 150)
-    elseif i.KeyCode == Enum.KeyCode.Minus then
-        speed = math.max(speed - 5, 10)
-    end
+-- Автоматическое восстановление GUI после смерти
+LocalPlayer.CharacterAdded:Connect(function()
+    wait(1)
+    createGUI()
 end)
 
-flyButton.MouseButton1Click:Connect(toggleFly)
+createGUI()
