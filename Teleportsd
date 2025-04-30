@@ -1,5 +1,5 @@
--- Teleport GUI by Mad Fox
--- Обновлённая версия: поиск, сохранение нескольких позиций, удаление, скобки с ником и плавная прокрутка
+-- Teleport GUI by Mad Fox 
+-- Работает после смерти, полноценный флай удалён, меню перетаскиваемое
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -17,7 +17,7 @@ local function createGUI()
     gui.ResetOnSpawn = false
 
     local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0, 250, 0, 350)
+    frame.Size = UDim2.new(0, 250, 0, 300)
     frame.Position = UDim2.new(0.3, 0, 0.3, 0)
     frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     frame.BorderSizePixel = 0
@@ -40,47 +40,6 @@ local function createGUI()
     input.TextColor3 = Color3.new(1,1,1)
     input.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 
-    local scroll = Instance.new("ScrollingFrame", frame)
-    scroll.Size = UDim2.new(1, -20, 0, 100)
-    scroll.Position = UDim2.new(0, 10, 0, 80)
-    scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    scroll.ScrollBarThickness = 6
-    scroll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    scroll.Visible = false
-    scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    scroll.ScrollingDirection = Enum.ScrollingDirection.Y
-    scroll.CanvasPosition = Vector2.new(0, 0)
-    scroll.ClipsDescendants = true
-
-    local layout = Instance.new("UIListLayout", scroll)
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 2)
-
-    input.Focused:Connect(function()
-        scroll.Visible = true
-        scroll.CanvasPosition = Vector2.new(0, 0)
-        scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        scroll:ClearAllChildren()
-        layout.Parent = scroll
-
-        for _, player in pairs(Players:GetPlayers()) do
-            local btn = Instance.new("TextButton", scroll)
-            btn.Size = UDim2.new(1, 0, 0, 25)
-            btn.Text = player.DisplayName .. " (" .. player.Name .. ")"
-            btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.MouseButton1Click:Connect(function()
-                input.Text = player.Name
-                scroll.Visible = false
-            end)
-        end
-    end)
-
-    input.FocusLost:Connect(function()
-        wait(0.2)
-        scroll.Visible = false
-    end)
-
     local function btn(text, y)
         local b = Instance.new("TextButton", frame)
         b.Size = UDim2.new(1, -20, 0, 30)
@@ -91,54 +50,43 @@ local function createGUI()
         return b
     end
 
-    local toBtn = btn("Телепорт к игроку", 190)
-    local bringBtn = btn("Телепорт игрока к себе", 230)
+    local toBtn = btn("Телепорт к игроку", 80)
+    local bringBtn = btn("Телепорт игрока к себе", 120)
 
-    local saveBtn = btn("Сохранить позицию", 270)
-    local posList = Instance.new("Frame", frame)
-    posList.Size = UDim2.new(1, -20, 0, 50)
-    posList.Position = UDim2.new(0, 10, 0, 310)
-    posList.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    posList.ClipsDescendants = true
+    local playerListFrame = Instance.new("ScrollingFrame", frame)
+    playerListFrame.Size = UDim2.new(1, -20, 0, 100)
+    playerListFrame.Position = UDim2.new(0, 10, 0, 160)
+    playerListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    playerListFrame.ScrollBarThickness = 6
+    playerListFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    playerListFrame.Visible = false
+    playerListFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+    playerListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-    local posLayout = Instance.new("UIListLayout", posList)
-    posLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    posLayout.Padding = UDim.new(0, 2)
-
-    local savedPositions = {}
-    local posCount = 0
-
-    saveBtn.MouseButton1Click:Connect(function()
-        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            posCount += 1
-            local position = hrp.Position
-            savedPositions[posCount] = position
-
-            local posBtn = Instance.new("TextButton", posList)
-            posBtn.Size = UDim2.new(1, 0, 0, 20)
-            posBtn.Text = "Позиция " .. posCount
-            posBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
-            posBtn.TextColor3 = Color3.new(1,1,1)
-
-            posBtn.MouseButton1Click:Connect(function()
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(savedPositions[posCount])
-                end
-            end)
-
-            local delete = Instance.new("TextButton", posBtn)
-            delete.Size = UDim2.new(0, 20, 1, 0)
-            delete.Position = UDim2.new(1, -20, 0, 0)
-            delete.Text = "X"
-            delete.BackgroundColor3 = Color3.fromRGB(120,0,0)
-            delete.TextColor3 = Color3.new(1,1,1)
-
-            delete.MouseButton1Click:Connect(function()
-                posBtn:Destroy()
-                savedPositions[posCount] = nil
+    local function refreshPlayerList()
+        for _, child in pairs(playerListFrame:GetChildren()) do
+            if child:IsA("TextButton") then child:Destroy() end
+        end
+        for _, player in ipairs(Players:GetPlayers()) do
+            local nameButton = Instance.new("TextButton", playerListFrame)
+            nameButton.Size = UDim2.new(1, 0, 0, 25)
+            nameButton.Text = player.DisplayName .. " [" .. player.Name .. "]"
+            nameButton.TextColor3 = Color3.new(1, 1, 1)
+            nameButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+            nameButton.MouseButton1Click:Connect(function()
+                input.Text = player.Name
             end)
         end
+    end
+
+    input.Focused:Connect(function()
+        playerListFrame.Visible = true
+        refreshPlayerList()
+    end)
+
+    input.FocusLost:Connect(function()
+        wait(0.2)
+        playerListFrame.Visible = false
     end)
 
     toBtn.MouseButton1Click:Connect(function()
@@ -153,6 +101,11 @@ local function createGUI()
         if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
             t.Character:MoveTo(LocalPlayer.Character.HumanoidRootPart.Position)
         end
+    end)
+
+    -- Уменьшение скорости скролла
+    playerListFrame:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+        playerListFrame.CanvasPosition = Vector2.new(0, math.floor(playerListFrame.CanvasPosition.Y / 2))
     end)
 end
 
