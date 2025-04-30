@@ -1,17 +1,23 @@
 -- Teleport GUI by Mad Fox
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local savedPos = nil
 local flying = false
-local flyVel = nil
+local flySpeed = 5
+local flyBV = nil
+local flyBG = nil
+local flyConn = nil
 
 -- GUI
-local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+local gui = Instance.new("ScreenGui")
 gui.Name = "TeleportGUI"
+gui.ResetOnSpawn = false
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 300)
+frame.Size = UDim2.new(0, 250, 0, 360)
 frame.Position = UDim2.new(0.35, 0, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 frame.BorderSizePixel = 0
@@ -41,6 +47,8 @@ local function createButton(text, yOffset)
 	btn.Text = text
 	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	btn.Font = Enum.Font.SourceSans
+	btn.TextSize = 14
 	return btn
 end
 
@@ -50,54 +58,132 @@ local bringBtn = createButton("Телепорт игрока к себе", 120)
 local saveBtn = createButton("Сохранить позицию", 160)
 local goBtn = createButton("Телепорт на позицию", 200)
 local flyBtn = createButton("Флай: OFF", 240)
+local speedLabel = Instance.new("TextLabel", frame)
+speedLabel.Size = UDim2.new(1, -20, 0, 20)
+speedLabel.Position = UDim2.new(0, 10, 0, 280)
+speedLabel.Text = "Скорость: "..flySpeed
+speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Font = Enum.Font.SourceSans
+speedLabel.TextSize = 14
 
--- Телепорт к игроку
+local speedUpBtn = createButton("+", 310)
+speedUpBtn.Size = UDim2.new(0.45, -15, 0, 30)
+speedUpBtn.Position = UDim2.new(0, 10, 0, 310)
+
+local speedDownBtn = createButton("-", 310)
+speedDownBtn.Size = UDim2.new(0.45, -15, 0, 30)
+speedDownBtn.Position = UDim2.new(0.55, 5, 0, 310)
+
+-- Функции
+local function getCharacter()
+	return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+end
+
+local function startFly()
+	local character = getCharacter()
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	flyBV = Instance.new("BodyVelocity")
+	flyBV.Velocity = Vector3.new(0, 0, 0)
+	flyBV.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+	flyBV.P = 1250
+	flyBV.Parent = hrp
+
+	flyBG = Instance.new("BodyGyro")
+	flyBG.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+	flyBG.P = 3000
+	flyBG.CFrame = hrp.CFrame
+	flyBG.Parent = hrp
+
+	flyConn = RunService.RenderStepped:Connect(function()
+		local moveDir = Vector3.new(0, 0, 0)
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+			moveDir = moveDir + workspace.CurrentCamera.CFrame.LookVector
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+			moveDir = moveDir - workspace.CurrentCamera.CFrame.LookVector
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+			moveDir = moveDir - workspace.CurrentCamera.CFrame.RightVector
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+			moveDir = moveDir + workspace.CurrentCamera.CFrame.RightVector
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+			moveDir = moveDir + Vector3.new(0, 1, 0)
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+			moveDir = moveDir - Vector3.new(0, 1, 0)
+		end
+		flyBV.Velocity = moveDir.Unit * flySpeed
+		flyBG.CFrame = workspace.CurrentCamera.CFrame
+	end)
+end
+
+local function stopFly()
+	if flyBV then flyBV:Destroy() flyBV = nil end
+	if flyBG then flyBG:Destroy() flyBG = nil end
+	if flyConn then flyConn:Disconnect() flyConn = nil end
+end
+
+-- Обработчики кнопок
 toBtn.MouseButton1Click:Connect(function()
 	local target = Players:FindFirstChild(input.Text)
 	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-		LocalPlayer.Character:MoveTo(target.Character.HumanoidRootPart.Position)
+		getCharacter():MoveTo(target.Character.HumanoidRootPart.Position)
 	end
 end)
 
--- Телепорт игрока к себе
 bringBtn.MouseButton1Click:Connect(function()
 	local target = Players:FindFirstChild(input.Text)
 	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-		target.Character:MoveTo(LocalPlayer.Character.HumanoidRootPart.Position)
+		target.Character:MoveTo(getCharacter().HumanoidRootPart.Position)
 	end
 end)
 
--- Сохранить позицию
 saveBtn.MouseButton1Click:Connect(function()
-	local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	local hrp = getCharacter():FindFirstChild("HumanoidRootPart")
 	if hrp then
 		savedPos = hrp.Position
 	end
 end)
 
--- Телепорт на сохранённую позицию
 goBtn.MouseButton1Click:Connect(function()
-	local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	local hrp = getCharacter():FindFirstChild("HumanoidRootPart")
 	if hrp and savedPos then
 		hrp.CFrame = CFrame.new(savedPos)
 	end
 end)
 
--- Флай ON/OFF
 flyBtn.MouseButton1Click:Connect(function()
-	local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
-
 	if flying then
-		if flyVel then flyVel:Destroy() end
-		flying = false
+		stopFly()
 		flyBtn.Text = "Флай: OFF"
+		flying = false
 	else
-		flyVel = Instance.new("BodyVelocity")
-		flyVel.Velocity = Vector3.new(0, 50, 0)
-		flyVel.MaxForce = Vector3.new(100000, 100000, 100000)
-		flyVel.Parent = hrp
-		flying = true
+		startFly()
 		flyBtn.Text = "Флай: ON"
+		flying = true
 	end
+end)
+
+speedUpBtn.MouseButton1Click:Connect(function()
+	if flySpeed < 10 then
+		flySpeed = flySpeed + 1
+		speedLabel.Text = "Скорость: "..flySpeed
+	end
+end)
+
+speedDownBtn.MouseButton1Click:Connect(function()
+	if flySpeed > 0 then
+		flySpeed = flySpeed - 1
+		speedLabel.Text = "Скорость: "..flySpeed
+	end
+end)
+
+-- Восстановление GUI после смерти
+LocalPlayer.CharacterAdded:Connect(function()
+	gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 end)
