@@ -1,10 +1,7 @@
--- Teleport GUI by Mad Fox 
--- Работает после смерти, полноценный флай (удалён), меню перетаскиваемое
+-- Teleport GUI by Mad Fox (обновлено)
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- Проверка на PlayerGui
 repeat wait() until LocalPlayer:FindFirstChild("PlayerGui")
 
 local function createGUI()
@@ -17,7 +14,7 @@ local function createGUI()
     gui.ResetOnSpawn = false
 
     local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0, 250, 0, 250)
+    frame.Size = UDim2.new(0, 250, 0, 350)
     frame.Position = UDim2.new(0.3, 0, 0.3, 0)
     frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     frame.BorderSizePixel = 0
@@ -40,6 +37,38 @@ local function createGUI()
     input.TextColor3 = Color3.new(1,1,1)
     input.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 
+    local scroll = Instance.new("ScrollingFrame", frame)
+    scroll.Position = UDim2.new(0, 10, 0, 75)
+    scroll.Size = UDim2.new(1, -20, 0, 80)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scroll.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    scroll.ScrollBarThickness = 5
+    scroll.BorderSizePixel = 0
+
+    local function updatePlayerList()
+        scroll:ClearAllChildren()
+        local y = 0
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                local btn = Instance.new("TextButton", scroll)
+                btn.Size = UDim2.new(1, 0, 0, 25)
+                btn.Position = UDim2.new(0, 0, 0, y)
+                btn.Text = player.Name
+                btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                btn.TextColor3 = Color3.new(1, 1, 1)
+                btn.MouseButton1Click:Connect(function()
+                    input.Text = player.Name
+                end)
+                y = y + 25
+            end
+        end
+        scroll.CanvasSize = UDim2.new(0, 0, 0, y)
+    end
+
+    updatePlayerList()
+    Players.PlayerAdded:Connect(updatePlayerList)
+    Players.PlayerRemoving:Connect(updatePlayerList)
+
     local function btn(text, y)
         local b = Instance.new("TextButton", frame)
         b.Size = UDim2.new(1, -20, 0, 30)
@@ -50,14 +79,13 @@ local function createGUI()
         return b
     end
 
-    local toBtn = btn("Телепорт к игроку", 80)
-    local bringBtn = btn("Телепорт игрока к себе", 120)
-    local saveBtn = btn("Сохранить позицию", 160)
-    local tpPosBtn = btn("Телепорт на позицию", 200)
+    local toBtn = btn("Телепорт к игроку", 160)
+    local bringBtn = btn("Телепорт игрока к себе", 200)
+    local saveBtn = btn("Сохранить позицию", 240)
+    local tpPosBtn = btn("Телепорт на позицию", 280)
 
     local savedPos = nil
 
-    -- Телепорт к игроку
     toBtn.MouseButton1Click:Connect(function()
         local t = Players:FindFirstChild(input.Text)
         if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
@@ -65,7 +93,6 @@ local function createGUI()
         end
     end)
 
-    -- Притянуть игрока
     bringBtn.MouseButton1Click:Connect(function()
         local t = Players:FindFirstChild(input.Text)
         if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
@@ -73,13 +100,11 @@ local function createGUI()
         end
     end)
 
-    -- Сохранение позиции
     saveBtn.MouseButton1Click:Connect(function()
         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if hrp then savedPos = hrp.Position end
     end)
 
-    -- Телепорт на сохранённую позицию
     tpPosBtn.MouseButton1Click:Connect(function()
         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if hrp and savedPos then
@@ -88,7 +113,6 @@ local function createGUI()
     end)
 end
 
--- Автоматическое восстановление GUI после смерти
 LocalPlayer.CharacterAdded:Connect(function()
     wait(1)
     createGUI()
