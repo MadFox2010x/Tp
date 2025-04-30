@@ -1,0 +1,66 @@
+-- Teleport GUI by Mad Fox
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI создание
+local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+gui.Name = "TeleportGUI"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 220, 0, 160)
+frame.Position = UDim2.new(0.4, 0, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true -- делает меню перетаскиваемым
+
+-- Подпись "by Mad Fox"
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "Teleport GUI - by Mad Fox"
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 16
+
+-- Ввод ника
+local input = Instance.new("TextBox", frame)
+input.Size = UDim2.new(1, -20, 0, 30)
+input.Position = UDim2.new(0, 10, 0, 40)
+input.PlaceholderText = "Ник игрока"
+input.Text = ""
+input.TextColor3 = Color3.new(1,1,1)
+input.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+
+-- Кнопка: ТП к игроку
+local toBtn = Instance.new("TextButton", frame)
+toBtn.Size = UDim2.new(1, -20, 0, 30)
+toBtn.Position = UDim2.new(0, 10, 0, 80)
+toBtn.Text = "🧍 Телепорт к игроку"
+toBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+
+-- Кнопка: ТП игрока к себе
+local bringBtn = Instance.new("TextButton", frame)
+bringBtn.Size = UDim2.new(1, -20, 0, 30)
+bringBtn.Position = UDim2.new(0, 10, 0, 120)
+bringBtn.Text = "Телепорт игрока к себе"
+bringBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+bringBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+
+-- Логика: ТП к игроку
+toBtn.MouseButton1Click:Connect(function()
+	local target = Players:FindFirstChild(input.Text)
+	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+		LocalPlayer.Character:MoveTo(target.Character.HumanoidRootPart.Position)
+	end
+end)
+
+-- Логика: ТП игрока к себе
+bringBtn.MouseButton1Click:Connect(function()
+	local target = Players:FindFirstChild(input.Text)
+	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+		target.Character:MoveTo(LocalPlayer.Character.HumanoidRootPart.Position)
+	end
+end)
