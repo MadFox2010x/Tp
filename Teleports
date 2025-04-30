@@ -1,9 +1,8 @@
--- ✅ Teleport GUI & Speed by Mad Fox
--- Работает после смерти, можно менять скорость, ограничение до 100
+-- Teleport GUI by Mad Fox 
+-- Работает после смерти, полноценный флай (удалён), меню перетаскиваемое
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local UserInputService = game:GetService("UserInputService")
 
 -- Проверка на PlayerGui
 repeat wait() until LocalPlayer:FindFirstChild("PlayerGui")
@@ -18,7 +17,7 @@ local function createGUI()
     gui.ResetOnSpawn = false
 
     local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0, 250, 0, 330)
+    frame.Size = UDim2.new(0, 250, 0, 250)
     frame.Position = UDim2.new(0.3, 0, 0.3, 0)
     frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     frame.BorderSizePixel = 0
@@ -55,40 +54,8 @@ local function createGUI()
     local bringBtn = btn("Телепорт игрока к себе", 120)
     local saveBtn = btn("Сохранить позицию", 160)
     local tpPosBtn = btn("Телепорт на позицию", 200)
-    local speedLabel = btn("Скорость: 5", 240)
-    speedLabel.AutoButtonColor = false
-    local applySpeedBtn = btn("Применить скорость", 280)
-    applySpeedBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 
-    local speed = 5
-
-    -- Управление скоростью
-    local plusBtn = Instance.new("TextButton", frame)
-    plusBtn.Size = UDim2.new(0, 30, 0, 30)
-    plusBtn.Position = UDim2.new(1, -35, 0, 240)
-    plusBtn.Text = "+"
-    plusBtn.TextColor3 = Color3.new(1,1,1)
-    plusBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
-
-    local minusBtn = plusBtn:Clone()
-    minusBtn.Parent = frame
-    minusBtn.Position = UDim2.new(1, -70, 0, 240)
-    minusBtn.Text = "-"
-
-    plusBtn.MouseButton1Click:Connect(function()
-        if speed < 100 then speed += 1 end
-        speedLabel.Text = "Скорость: "..speed
-    end)
-
-    minusBtn.MouseButton1Click:Connect(function()
-        if speed > 0 then speed -= 1 end
-        speedLabel.Text = "Скорость: "..speed
-    end)
-
-    -- Применение скорости
-    applySpeedBtn.MouseButton1Click:Connect(function()
-        speedLabel.Text = "Скорость: "..speed
-    end)
+    local savedPos = nil
 
     -- Телепорт к игроку
     toBtn.MouseButton1Click:Connect(function()
@@ -119,7 +86,6 @@ local function createGUI()
             hrp.CFrame = CFrame.new(savedPos)
         end
     end)
-
 end
 
 -- Автоматическое восстановление GUI после смерти
