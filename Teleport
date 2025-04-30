@@ -1,21 +1,23 @@
 -- Teleport GUI by Mad Fox
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local savedPos = nil
+local flying = false
+local flyVel = nil
 
--- GUI создание
+-- GUI
 local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 gui.Name = "TeleportGUI"
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 220, 0, 160)
-frame.Position = UDim2.new(0.4, 0, 0.3, 0)
+frame.Size = UDim2.new(0, 250, 0, 300)
+frame.Position = UDim2.new(0.35, 0, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 frame.BorderSizePixel = 0
 frame.Active = true
-frame.Draggable = true -- делает меню перетаскиваемым
+frame.Draggable = true
 
--- Подпись "by Mad Fox"
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Text = "Teleport GUI - by Mad Fox"
@@ -24,32 +26,32 @@ title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 16
 
--- Ввод ника
 local input = Instance.new("TextBox", frame)
 input.Size = UDim2.new(1, -20, 0, 30)
 input.Position = UDim2.new(0, 10, 0, 40)
-input.PlaceholderText = "Ник игрока"
+input.PlaceholderText = "Имя игрока"
 input.Text = ""
 input.TextColor3 = Color3.new(1,1,1)
 input.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 
--- Кнопка: ТП к игроку
-local toBtn = Instance.new("TextButton", frame)
-toBtn.Size = UDim2.new(1, -20, 0, 30)
-toBtn.Position = UDim2.new(0, 10, 0, 80)
-toBtn.Text = "🧍 Телепорт к игроку"
-toBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toBtn.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+local function createButton(text, yOffset)
+	local btn = Instance.new("TextButton", frame)
+	btn.Size = UDim2.new(1, -20, 0, 30)
+	btn.Position = UDim2.new(0, 10, 0, yOffset)
+	btn.Text = text
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+	return btn
+end
 
--- Кнопка: ТП игрока к себе
-local bringBtn = Instance.new("TextButton", frame)
-bringBtn.Size = UDim2.new(1, -20, 0, 30)
-bringBtn.Position = UDim2.new(0, 10, 0, 120)
-bringBtn.Text = "Телепорт игрока к себе"
-bringBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-bringBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+-- Кнопки
+local toBtn = createButton("Телепорт к игроку", 80)
+local bringBtn = createButton("Телепорт игрока к себе", 120)
+local saveBtn = createButton("Сохранить позицию", 160)
+local goBtn = createButton("Телепорт на позицию", 200)
+local flyBtn = createButton("Флай: OFF", 240)
 
--- Логика: ТП к игроку
+-- Телепорт к игроку
 toBtn.MouseButton1Click:Connect(function()
 	local target = Players:FindFirstChild(input.Text)
 	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
@@ -57,10 +59,45 @@ toBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Логика: ТП игрока к себе
+-- Телепорт игрока к себе
 bringBtn.MouseButton1Click:Connect(function()
 	local target = Players:FindFirstChild(input.Text)
 	if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
 		target.Character:MoveTo(LocalPlayer.Character.HumanoidRootPart.Position)
+	end
+end)
+
+-- Сохранить позицию
+saveBtn.MouseButton1Click:Connect(function()
+	local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		savedPos = hrp.Position
+	end
+end)
+
+-- Телепорт на сохранённую позицию
+goBtn.MouseButton1Click:Connect(function()
+	local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if hrp and savedPos then
+		hrp.CFrame = CFrame.new(savedPos)
+	end
+end)
+
+-- Флай ON/OFF
+flyBtn.MouseButton1Click:Connect(function()
+	local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	if flying then
+		if flyVel then flyVel:Destroy() end
+		flying = false
+		flyBtn.Text = "Флай: OFF"
+	else
+		flyVel = Instance.new("BodyVelocity")
+		flyVel.Velocity = Vector3.new(0, 50, 0)
+		flyVel.MaxForce = Vector3.new(100000, 100000, 100000)
+		flyVel.Parent = hrp
+		flying = true
+		flyBtn.Text = "Флай: ON"
 	end
 end)
