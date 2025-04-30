@@ -1,8 +1,5 @@
--- Teleport GUI by Mad Fox 
--- Работает после смерти, полноценный флай удалён, меню перетаскиваемое
-
+-- Teleport GUI by Mad Fox (nick + displayname + scroll fix)
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 repeat wait() until LocalPlayer:FindFirstChild("PlayerGui")
@@ -17,7 +14,7 @@ local function createGUI()
     gui.ResetOnSpawn = false
 
     local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0, 250, 0, 300)
+    frame.Size = UDim2.new(0, 250, 0, 350)
     frame.Position = UDim2.new(0.3, 0, 0.3, 0)
     frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     frame.BorderSizePixel = 0
@@ -40,6 +37,50 @@ local function createGUI()
     input.TextColor3 = Color3.new(1,1,1)
     input.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 
+    local scroll = Instance.new("ScrollingFrame", frame)
+    scroll.Position = UDim2.new(0, 10, 0, 75)
+    scroll.Size = UDim2.new(1, -20, 0, 80)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scroll.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    scroll.ScrollBarThickness = 5
+    scroll.BorderSizePixel = 0
+    scroll.ClipsDescendants = true
+
+    -- 🐌 Медленная прокрутка
+    local UIS = game:GetService("UserInputService")
+    UIS.InputChanged:Connect(function(inputObj)
+        if inputObj.UserInputType == Enum.UserInputType.MouseWheel and scroll:IsDescendantOf(gui) then
+            scroll.CanvasPosition = scroll.CanvasPosition - Vector2.new(0, inputObj.Position.Z * 4) -- уменьшено
+        end
+    end)
+
+    local function updatePlayerList()
+        scroll:ClearAllChildren()
+        local y = 0
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                local btn = Instance.new("TextButton", scroll)
+                btn.Size = UDim2.new(1, 0, 0, 25)
+                btn.Position = UDim2.new(0, 0, 0, y)
+                btn.Text = player.Name .. " (" .. player.DisplayName .. ")"
+                btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                btn.TextColor3 = Color3.new(1, 1, 1)
+                btn.Font = Enum.Font.SourceSans
+                btn.TextSize = 14
+                btn.TextXAlignment = Enum.TextXAlignment.Left
+                btn.MouseButton1Click:Connect(function()
+                    input.Text = player.Name
+                end)
+                y = y + 25
+            end
+        end
+        scroll.CanvasSize = UDim2.new(0, 0, 0, y)
+    end
+
+    updatePlayerList()
+    Players.PlayerAdded:Connect(updatePlayerList)
+    Players.PlayerRemoving:Connect(updatePlayerList)
+
     local function btn(text, y)
         local b = Instance.new("TextButton", frame)
         b.Size = UDim2.new(1, -20, 0, 30)
@@ -50,44 +91,12 @@ local function createGUI()
         return b
     end
 
-    local toBtn = btn("Телепорт к игроку", 80)
-    local bringBtn = btn("Телепорт игрока к себе", 120)
+    local toBtn = btn("Телепорт к игроку", 160)
+    local bringBtn = btn("Телепорт игрока к себе", 200)
+    local saveBtn = btn("Сохранить позицию", 240)
+    local tpPosBtn = btn("Телепорт на позицию", 280)
 
-    local playerListFrame = Instance.new("ScrollingFrame", frame)
-    playerListFrame.Size = UDim2.new(1, -20, 0, 100)
-    playerListFrame.Position = UDim2.new(0, 10, 0, 160)
-    playerListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    playerListFrame.ScrollBarThickness = 6
-    playerListFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    playerListFrame.Visible = false
-    playerListFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-    playerListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-
-    local function refreshPlayerList()
-        for _, child in pairs(playerListFrame:GetChildren()) do
-            if child:IsA("TextButton") then child:Destroy() end
-        end
-        for _, player in ipairs(Players:GetPlayers()) do
-            local nameButton = Instance.new("TextButton", playerListFrame)
-            nameButton.Size = UDim2.new(1, 0, 0, 25)
-            nameButton.Text = player.DisplayName .. " [" .. player.Name .. "]"
-            nameButton.TextColor3 = Color3.new(1, 1, 1)
-            nameButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-            nameButton.MouseButton1Click:Connect(function()
-                input.Text = player.Name
-            end)
-        end
-    end
-
-    input.Focused:Connect(function()
-        playerListFrame.Visible = true
-        refreshPlayerList()
-    end)
-
-    input.FocusLost:Connect(function()
-        wait(0.2)
-        playerListFrame.Visible = false
-    end)
+    local savedPos = nil
 
     toBtn.MouseButton1Click:Connect(function()
         local t = Players:FindFirstChild(input.Text)
@@ -103,9 +112,16 @@ local function createGUI()
         end
     end)
 
-    -- Уменьшение скорости скролла
-    playerListFrame:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
-        playerListFrame.CanvasPosition = Vector2.new(0, math.floor(playerListFrame.CanvasPosition.Y / 2))
+    saveBtn.MouseButton1Click:Connect(function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then savedPos = hrp.Position end
+    end)
+
+    tpPosBtn.MouseButton1Click:Connect(function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp and savedPos then
+            hrp.CFrame = CFrame.new(savedPos)
+        end
     end)
 end
 
