@@ -1,4 +1,4 @@
--- Teleport GUI by Mad Fox (обновлено)
+-- Teleport GUI by Mad Fox (nick + displayname + scroll fix)
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
@@ -44,6 +44,15 @@ local function createGUI()
     scroll.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     scroll.ScrollBarThickness = 5
     scroll.BorderSizePixel = 0
+    scroll.ClipsDescendants = true
+
+    -- 🐌 Медленная прокрутка
+    local UIS = game:GetService("UserInputService")
+    UIS.InputChanged:Connect(function(inputObj)
+        if inputObj.UserInputType == Enum.UserInputType.MouseWheel and scroll:IsDescendantOf(gui) then
+            scroll.CanvasPosition = scroll.CanvasPosition - Vector2.new(0, inputObj.Position.Z * 4) -- уменьшено
+        end
+    end)
 
     local function updatePlayerList()
         scroll:ClearAllChildren()
@@ -53,9 +62,12 @@ local function createGUI()
                 local btn = Instance.new("TextButton", scroll)
                 btn.Size = UDim2.new(1, 0, 0, 25)
                 btn.Position = UDim2.new(0, 0, 0, y)
-                btn.Text = player.Name
+                btn.Text = player.Name .. " (" .. player.DisplayName .. ")"
                 btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                 btn.TextColor3 = Color3.new(1, 1, 1)
+                btn.Font = Enum.Font.SourceSans
+                btn.TextSize = 14
+                btn.TextXAlignment = Enum.TextXAlignment.Left
                 btn.MouseButton1Click:Connect(function()
                     input.Text = player.Name
                 end)
