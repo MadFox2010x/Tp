@@ -1,5 +1,6 @@
--- Teleport GUI by Mad Fox (nick + displayname + scroll fix)
+-- Teleport GUI by Mad Fox (nick + displayname + scroll fix + infinite tp)
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 repeat wait() until LocalPlayer:FindFirstChild("PlayerGui")
@@ -14,7 +15,7 @@ local function createGUI()
     gui.ResetOnSpawn = false
 
     local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0, 250, 0, 350)
+    frame.Size = UDim2.new(0, 250, 0, 390)
     frame.Position = UDim2.new(0.3, 0, 0.3, 0)
     frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     frame.BorderSizePixel = 0
@@ -46,11 +47,10 @@ local function createGUI()
     scroll.BorderSizePixel = 0
     scroll.ClipsDescendants = true
 
-    -- 🐌 Медленная прокрутка
     local UIS = game:GetService("UserInputService")
     UIS.InputChanged:Connect(function(inputObj)
         if inputObj.UserInputType == Enum.UserInputType.MouseWheel and scroll:IsDescendantOf(gui) then
-            scroll.CanvasPosition = scroll.CanvasPosition - Vector2.new(0, inputObj.Position.Z * 4) -- уменьшено
+            scroll.CanvasPosition = scroll.CanvasPosition - Vector2.new(0, inputObj.Position.Z * 4)
         end
     end)
 
@@ -95,8 +95,11 @@ local function createGUI()
     local bringBtn = btn("Телепорт игрока к себе", 200)
     local saveBtn = btn("Сохранить позицию", 240)
     local tpPosBtn = btn("Телепорт на позицию", 280)
+    local autoTpBtn = btn("Вечно ТП к игроку", 320)
 
     local savedPos = nil
+    local autoTP = false
+    local connection
 
     toBtn.MouseButton1Click:Connect(function()
         local t = Players:FindFirstChild(input.Text)
@@ -121,6 +124,22 @@ local function createGUI()
         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if hrp and savedPos then
             hrp.CFrame = CFrame.new(savedPos)
+        end
+    end)
+
+    autoTpBtn.MouseButton1Click:Connect(function()
+        autoTP = not autoTP
+        autoTpBtn.Text = autoTP and "Остановить Вечно ТП" or "Вечно ТП к игроку"
+        if autoTP then
+            connection = RunService.RenderStepped:Connect(function()
+                local t = Players:FindFirstChild(input.Text)
+                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    LocalPlayer.Character:MoveTo(t.Character.HumanoidRootPart.Position)
+                end
+            end)
+        elseif connection then
+            connection:Disconnect()
+            connection = nil
         end
     end)
 end
